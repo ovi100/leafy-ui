@@ -28,7 +28,7 @@ import {edges, sizes, variants} from '../lib/common';
 const Button = ({
   size = 'medium',
   variant = 'default',
-  text = 'Button text',
+  text = 'Button',
   brandColor = null,
   onPress = null,
   icon = null,

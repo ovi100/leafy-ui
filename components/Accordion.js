@@ -9,7 +9,7 @@ import Animated, {
   useDerivedValue,
   withTiming,
 } from 'react-native-reanimated';
-import {sizes, variants} from '../lib/common';
+import {lighten, sizes, variants} from '../lib/common';
 
 const accordionStyle = {color: '#fff', fontSize: 14};
 const content = (
@@ -53,6 +53,16 @@ const Accordion = ({
   const iconStyle = useAnimatedStyle(() => ({
     transform: [{rotate: `${rotate.value * 45}deg`}],
   }));
+
+  const getContentStyle = () => {
+    return {
+      backgroundColor: lighten(variants[variant].bg, 15),
+      padding: sizes[size].space,
+      paddingHorizontal: sizes[size].space,
+      paddingTop: sizes[size].space / 2,
+      paddingBottom: sizes[size].space,
+    };
+  };
 
   const getIconStyle = () => {
     const s = sizes[size].iconSize - 10;
@@ -101,16 +111,7 @@ const Accordion = ({
       </Pressable>
       <Animated.View style={heightAnimationStyle}>
         <Animated.View style={styles.contentContainer} ref={listRef}>
-          <View
-            style={[
-              styles.content,
-              {
-                paddingHorizontal: sizes[size].space,
-                paddingBottom: sizes[size].space,
-              },
-            ]}>
-            {item.content}
-          </View>
+          <View style={getContentStyle()}>{item.content}</View>
         </Animated.View>
       </Animated.View>
     </View>
@@ -135,14 +136,10 @@ const styles = StyleSheet.create({
   icon: {
     borderBottomWidth: 2,
     borderRightWidth: 2,
-    // transform: [{rotate: '90deg'}]
   },
   contentContainer: {
     position: 'absolute',
     top: 0,
     width: '100%',
-  },
-  content: {
-    backgroundColor: 'transparent',
   },
 });
