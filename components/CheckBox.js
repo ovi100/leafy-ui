@@ -1,14 +1,30 @@
 import React from 'react';
 import {View, Text, Pressable, StyleSheet} from 'react-native';
 
+/**
+ * A customizable check box component with support for size, variant, loading, and disabled states.
+ *
+ * @param {Object} props - check box component props.
+ * @param {string} [props.label=''] - Text to display inside the label.
+ * @param {boolean} [props.checked=false] - Whether the check box is disabled.
+ * @param {() => void|null} [props.onChange=null] - Function to call when the check box is pressed.
+ * @param {'small' | 'medium' | 'large'} [props.size='medium'] - Size of the check box.
+ * @param {'default' | 'brand' | 'primary' | 'secondary' | 'danger' | 'success' | 'warn' | 'cancel' | 'action'} [props.variant='default'] - Variant/style type of the check box.
+ * @param {string|null} [props.brandColor=null] - Custom brand color used when variant is 'brand'.
+ * @param {boolean} [props.disabled=false] - Whether the check box is disabled.
+ * @param {Object} style - check box component styles.
+ *
+ * @returns {JSX.Element} A styled check box component.
+ */
 const CheckBox = ({
   label = '',
   checked = false,
   onChange = () => null,
-  disabled = false,
   variant = 'default',
   size = 'medium',
   brandColor = '',
+  disabled = false,
+  style = {},
 }) => {
   const sizes = {
     small: {
@@ -47,40 +63,34 @@ const CheckBox = ({
 
   const Wrapper = !disabled ? Pressable : View;
 
-  const dynamicCheckboxStyle = () => {
-    let styles;
-    if (checked) {
-      styles = {
-        borderColor: variants[variant].border,
-        backgroundColor: variants[variant].bg,
-      };
-    } else {
-      styles = {
-        borderColor: '#d1d5db',
-        backgroundColor: 'transparent',
-      };
-    }
-    return styles;
+  const checkboxStyle = {
+    ...sizes[size].box,
+    borderColor: checked
+      ? variants[variant].border
+      : disabled
+      ? 'transparent'
+      : '#d1d5db',
+    backgroundColor: checked ? variants[variant].bg : 'transparent',
+    opacity: disabled ? 0.2 : 1,
+  };
+
+  const signStyle = {
+    ...sizes[size].sign,
+    borderColor: checked ? variants[variant].sign : 'transparent',
+  };
+
+  const labelStyle = {
+    ...style.label,
+    fontSize: sizes[size].fontSize,
+    opacity: disabled ? 0.2 : 1,
   };
 
   return (
-    <Wrapper style={[styles.container]} onPress={() => onChange(!checked)}>
-      <View style={[styles.checkbox, sizes[size].box, dynamicCheckboxStyle()]}>
-        {checked && (
-          <View
-            style={[
-              styles.sign,
-              sizes[size].sign,
-              {borderColor: variants[variant].sign},
-            ]}
-          />
-        )}
+    <Wrapper style={styles.container} onPress={() => onChange(!checked)}>
+      <View style={[styles.checkbox, checkboxStyle]}>
+        {checked && <View style={[styles.sign, signStyle]} />}
       </View>
-      {label && (
-        <Text style={[styles.label, {fontSize: sizes[size].fontSize}]}>
-          {label}
-        </Text>
-      )}
+      {label && <Text style={[styles.label, labelStyle]}>{label}</Text>}
     </Wrapper>
   );
 };
@@ -98,7 +108,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 1,
     borderRadius: 4,
     marginRight: 10,
   },

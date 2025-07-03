@@ -1,36 +1,79 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Dimensions, Image, Pressable, TouchableOpacity } from 'react-native';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {View, StyleSheet, Image, TouchableOpacity} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 
-const { width } = Dimensions.get('window');
+/**
+ * A customizable carousel component for React Native that supports auto-play, swipe gestures,
+ * navigation controls, and various indicator styles.
+ *
+ * @component
+ * @param {Object} props - The component props
+ * @param {(string[]|number[])} props.images - Array of image sources (URIs or require() imports)
+ * @param {number} [props.slideInterval=3000] - Interval in milliseconds between auto-slides
+ * @param {boolean} [props.autoPlay=false] - Whether the carousel should auto-play
+ * @param {boolean} [props.showArrows=false] - Whether to show navigation arrow controls
+ * @param {boolean} [props.showIndicators=true] - Whether to show slide indicators
+ * @param {('dots'|'bars'|'capsules')} [props.indicatorType='capsules'] - Style of indicators
+ * @param {('inside'|'outside')} [props.indicatorPosition='inside'] - Position of indicators relative to carousel
+ * @returns {React.ReactElement} The carousel component
+ *
+ * @example
+ * <Carousel
+ *   images={['https://example.com/image1.jpg', require('./local-image.jpg')]}
+ *   autoPlay={true}
+ *   slideInterval={5000}
+ *   indicatorType="dots"
+ *   indicatorPosition="outside"
+ * />
+ */
 
 const Carousel = ({
   images,
   slideInterval = 3000,
   autoPlay = false,
-  showControls = false,
-  showIndicators = true,
+  showArrows = true,
+  showIndicators = false,
   indicatorType = 'capsules',
   indicatorPosition = 'inside',
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(null);
   const translateX = useSharedValue(0);
   const autoSlideTimer = useRef(null);
 
+  const updateAnimation = useCallback(
+    index => {
+      if (containerWidth !== null) {
+        translateX.value = withTiming(-index * containerWidth, {duration: 300});
+      }
+    },
+    [translateX, containerWidth],
+  );
+
   const startAutoSlide = useCallback(() => {
-    if (!autoPlay) { return; }
+    if (!autoPlay || !containerWidth) {
+      return;
+    }
+    stopAutoSlide();
     autoSlideTimer.current = setInterval(() => {
       const nextIndex = (currentIndex + 1) % images.length;
       setCurrentIndex(nextIndex);
       updateAnimation(nextIndex);
     }, slideInterval);
-  }, [autoPlay, currentIndex, images.length, slideInterval, updateAnimation]);
+  }, [
+    autoPlay,
+    currentIndex,
+    images.length,
+    slideInterval,
+    updateAnimation,
+    containerWidth,
+  ]);
 
   const stopAutoSlide = () => {
     if (autoSlideTimer.current) {
@@ -44,21 +87,15 @@ const Carousel = ({
     return () => stopAutoSlide();
   }, [startAutoSlide]);
 
-  const updateAnimation = useCallback((index) => {
-    translateX.value = withTiming(-index * width, { duration: 300 });
-  }, [translateX]);
-
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [
-        { translateX: translateX.value },
-      ],
+      transform: [{translateX: translateX.value}],
     };
   });
 
-  const handleSwipe = (dir) => {
+  const handleSwipe = dir => {
     autoPlay && stopAutoSlide();
-    let newIndex;
+    let newIndex = currentIndex;
     if (dir === 'left') {
       newIndex = (currentIndex + 1) % images.length;
     } else if (dir === 'right') {
@@ -69,87 +106,80 @@ const Carousel = ({
     autoPlay && startAutoSlide();
   };
 
-  const handleIndicator = (index) => {
+  const handleIndicator = index => {
     autoPlay && stopAutoSlide();
     setCurrentIndex(index);
     updateAnimation(index);
     autoPlay && startAutoSlide();
   };
 
-  const panGesture = Gesture.Pan()
-    .onEnd((event) => {
-      if (event.translationX < -50) {
-        runOnJS(handleSwipe)('left');
-      } else if (event.translationX > 50) {
-        runOnJS(handleSwipe)('right');
-      }
-    });
-
-  const getIndicatorPositionStyles = (pos) => {
-    if (pos === 'inside') {
-      return { bottom: 20 };
-    } else {
-      return { bottom: -20 };
+  const panGesture = Gesture.Pan().onEnd(event => {
+    if (event.translationX < -50) {
+      runOnJS(handleSwipe)('left');
+    } else if (event.translationX > 50) {
+      runOnJS(handleSwipe)('right');
     }
+  });
+
+  const indicatorPositionStyles = {
+    marginTop: indicatorPosition === 'inside' ? -30 : 10,
   };
 
-  const getIndicatorStyles = (type) => {
-    let styles = {
-      backgroundColor: '#ccc',
-      marginHorizontal: 5,
-    };
-    if (type === 'dots') {
-      return {
-        width: 10,
-        height: 10,
-        borderRadius: '50%',
-        ...styles,
-      };
-    } else {
-      return {
-        width: 25,
-        height: 5,
-        borderRadius: type === 'bars' ? 0 : 100,
-        ...styles,
-      };
-    }
+  const indicatorStyles = {
+    backgroundColor: '#334155',
+    width: indicatorType === 'dots' ? 10 : 25,
+    height: indicatorType === 'dots' ? 10 : 5,
+    borderRadius: indicatorType === 'bars' ? 0 : 50,
+    marginHorizontal: 4,
   };
 
   return (
     <View style={styles.container}>
-      <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.slider, animatedStyle]}>
-          {images.map((image, index) => (
-            <View key={index} style={styles.slide}>
-              {typeof image === 'string' ? (
-                <Image source={{ uri: image }} style={styles.image} />
-              ) : (
-                <Image source={image} style={styles.image} />
-              )}
-            </View>
-          ))}
-        </Animated.View>
-      </GestureDetector>
-      {showControls && (
-        <View style={styles.controls}>
-          <Pressable onPress={() => handleSwipe('right')}>
-            <View style={styles.controlLeft} />
-          </Pressable>
+      <View
+        style={styles.carouselWrapper}
+        onLayout={e => setContainerWidth(e.nativeEvent.layout.width)}>
+        {containerWidth !== null && (
+          <>
+            <GestureDetector gesture={panGesture}>
+              <Animated.View
+                style={[
+                  styles.slider,
+                  {width: containerWidth * images.length},
+                  animatedStyle,
+                ]}>
+                {images.map((image, index) => (
+                  <View
+                    key={index}
+                    style={[styles.slide, {width: containerWidth}]}>
+                    <Image
+                      source={typeof image === 'string' ? {uri: image} : image}
+                      style={styles.image}
+                    />
+                  </View>
+                ))}
+              </Animated.View>
+            </GestureDetector>
 
-          <Pressable onPress={() => handleSwipe('left')}>
-            <View style={styles.controlRight} />
-          </Pressable>
-        </View>
-      )}
+            {showArrows && (
+              <View style={styles.controls}>
+                <TouchableOpacity onPress={() => handleSwipe('right')}>
+                  <View style={styles.controlLeft} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleSwipe('left')}>
+                  <View style={styles.controlRight} />
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
+        )}
+      </View>
+
       {showIndicators && (
-        <View style={[styles.indicators, getIndicatorPositionStyles(indicatorPosition)]}>
+        <View style={[styles.indicators, indicatorPositionStyles]}>
           {images.map((_, index) => (
             <TouchableOpacity
               key={index}
-              style={[
-                getIndicatorStyles(indicatorType),
-                index === currentIndex && styles.active,
-              ]}
+              style={[indicatorStyles, index === currentIndex && styles.active]}
               onPress={() => handleIndicator(index)}
             />
           ))}
@@ -161,33 +191,39 @@ const Carousel = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
-    flex: 1,
-    justifyContent: 'center',
+    width: '100%',
     alignItems: 'center',
   },
-  slider: {
-    flex: 1,
-    flexDirection: 'row',
-    width: width,
-    height: 'auto',
+  carouselWrapper: {
+    position: 'relative',
+    width: '100%',
+    height: 200,
+    overflow: 'hidden',
+    backgroundColor: '#000',
   },
-  slide: {
-    width: width,
+  slider: {
+    flexDirection: 'row',
     height: '100%',
   },
+  slide: {
+    height: '100%',
+    flexShrink: 0,
+  },
   image: {
-    width: width,
-    height: 250,
+    width: '100%',
+    height: '100%',
     resizeMode: 'cover',
   },
   controls: {
     position: 'absolute',
-    top: '50%',
+    top: '55%',
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
+    zIndex: 10,
+    transform: [{translateY: -14}],
   },
   controlLeft: {
     width: 18,
@@ -195,7 +231,7 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     borderBottomWidth: 3,
     borderRightWidth: 3,
-    transform: [{ rotate: '130deg' }],
+    transform: [{rotate: '135deg'}],
   },
   controlRight: {
     width: 18,
@@ -203,13 +239,12 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     borderBottomWidth: 3,
     borderRightWidth: 3,
-    transform: [{ rotate: '-40deg' }],
+    transform: [{rotate: '-45deg'}],
   },
   indicators: {
-    position: 'absolute',
-    width: '100%',
     flexDirection: 'row',
     justifyContent: 'center',
+    alignItems: 'center',
   },
   active: {
     backgroundColor: '#22c55e',

@@ -34,15 +34,15 @@ export default HotUpdater.wrap({
         header="Live update is in progress">
         <View className="modal-content flex-1">
           {status === 'CHECK_FOR_UPDATE' && progress === 0 && (
-            <>
+            <View className="bg-white h-full items-center justify-center">
               <ActivityIndicator size="large" color="#000" />
-              <Text className="text-black text-center">
+              <Text className="text-black text-center mt-3">
                 Checking for Updates...
               </Text>
-            </>
+            </View>
           )}
           {progress > 0 && (
-            <>
+            <View className="bg-white h-full items-center justify-center">
               <Text className="text-base sm:text-sm md:text-lg text-black text-center font-medium">
                 Applying the live update ensures you will get the latest version
                 of the application.
@@ -53,7 +53,7 @@ export default HotUpdater.wrap({
               <View className="">
                 <ProgressBar progress={Math.round(progress * 100)} size="small" variant="success" />
               </View>
-            </>
+            </View>
           )}
 
         </View>

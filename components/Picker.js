@@ -1,6 +1,5 @@
 import React, {useEffect, useState, useMemo, useCallback} from 'react';
 import {
-  Dimensions,
   Modal,
   View,
   Text,
@@ -10,11 +9,29 @@ import {
   StyleSheet,
   Platform,
   Keyboard,
+  Dimensions,
 } from 'react-native';
+import {edges} from '../lib/common';
+
+/**
+ * A customizable picker component with support for size, variant, icons, loading, and disabled states.
+ *
+ * @param {Object} props - Picker component props.
+ * @param {Array} [props.options=[]] - Picker option {label: item, value: item} formate.
+ * @param {() => void|null} [props.onSelect=null] - Function to call when the picker is pressed.
+ * @param {object} [props.selectedValue] - Picker selected option as object.
+ * @param {string} [props.placeholder='Select an option'] - Text to display inside the picker.
+ * @param {'text'} [props.type=''] - Type of the picker.
+ * @param {'square' | 'rounded'} [props.edge='rounded'] - Picker edge style.
+ * @param {boolean} [props.enableSearch=false] - Whether the picker has a search box.
+ * @param {boolean} [props.disabled=false] - Whether the picker is disabled.
+ *
+ * @returns {JSX.Element} A styled picker component.
+ */
 
 const {height} = Dimensions.get('window');
 
-const PickerItem = ({item, index, enableSearch, handleSelect}) => (
+const RenderItem = ({item, index, enableSearch, handleSelect}) => (
   <TouchableOpacity
     style={[styles.item, !enableSearch && index === 0 && {borderTopWidth: 0}]}
     onPress={() => handleSelect(item)}>
@@ -24,9 +41,12 @@ const PickerItem = ({item, index, enableSearch, handleSelect}) => (
 
 const Picker = ({
   options = [],
-  onSelect,
+  onSelect = null,
   selectedValue,
   enableSearch = false,
+  disabled = false,
+  edge = 'rounded',
+  type = '',
   placeholder = 'Select an option',
 }) => {
   const [visible, setVisible] = useState(false);
@@ -47,10 +67,13 @@ const Picker = ({
     };
   }, []);
 
-  const handleSelect = useCallback(item => {
-    setVisible(false);
-    onSelect(item);
-  }, [onSelect]);
+  const handleSelect = useCallback(
+    item => {
+      setVisible(false);
+      onSelect(item);
+    },
+    [onSelect],
+  );
 
   const formattedData = useMemo(() => {
     return options.map(item =>
@@ -71,7 +94,7 @@ const Picker = ({
   }, [enableSearch, search, formattedData]);
 
   const renderItem = ({item, index}) => (
-    <PickerItem
+    <RenderItem
       item={item}
       index={index}
       enableSearch={enableSearch}
@@ -79,10 +102,23 @@ const Picker = ({
     />
   );
 
+  const Wrapper = disabled ? View : TouchableOpacity;
+
+  // Dynamic styles based on props
+  const buttonStyles = () => ({
+    borderWidth: type === 'text' ? 0 : 1,
+    borderRadius: edges[edge],
+    opacity: disabled ? 0.5 : 1,
+    marginVertical: type === 'text' ? 0 : 8,
+  });
+
   return (
     <>
-      <TouchableOpacity style={styles.button} onPress={() => setVisible(true)}>
-        <Text style={styles.selectedText}>
+      <Wrapper
+        style={[styles.button, buttonStyles()]}
+        disabled={disabled}
+        onPress={() => setVisible(true)}>
+        <Text style={styles.selectedText} numberOfLines={1}>
           {selectedValue ? selectedValue.label : placeholder}
         </Text>
         <View
@@ -91,7 +127,7 @@ const Picker = ({
             {transform: [{rotate: visible ? '225deg' : '45deg'}]},
           ]}
         />
-      </TouchableOpacity>
+      </Wrapper>
 
       <Modal visible={visible} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
@@ -102,6 +138,8 @@ const Picker = ({
                   <TextInput
                     style={styles.searchInput}
                     placeholder="search an option....."
+                    placeholderTextColor="#ccc"
+                    selectionColor="#000"
                     value={search}
                     onChangeText={setSearch}
                   />
@@ -123,7 +161,10 @@ const Picker = ({
             )}
             <TouchableOpacity
               style={styles.cancelButton}
-              onPress={() => setVisible(false)}>
+              onPress={() => {
+                setVisible(false);
+                setSearch('');
+              }}>
               <Text style={styles.cancelText}>close</Text>
             </TouchableOpacity>
           </View>
@@ -133,18 +174,13 @@ const Picker = ({
   );
 };
 
-export default Picker;
-
 const styles = StyleSheet.create({
   button: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 12,
-    borderWidth: 1,
     borderColor: '#aaa',
-    borderRadius: 8,
-    marginVertical: 8,
   },
   selectedText: {
     fontSize: 15,
@@ -175,6 +211,7 @@ const styles = StyleSheet.create({
     }),
   },
   searchInput: {
+    color: '#000',
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderWidth: 0,
@@ -216,3 +253,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+export default Picker;

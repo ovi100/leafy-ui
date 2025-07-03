@@ -16,7 +16,7 @@ import {edges, sizes, variants} from '../lib/common';
  * @param {'default' | 'brand' | 'primary' | 'secondary' | 'danger' | 'success' | 'warn' | 'cancel' | 'action'} [props.variant='default'] - Variant/style type of the button.
  * @param {string} [props.text='Button text'] - Text to display inside the button.
  * @param {'filled' | 'outline' | 'text' | 'icon'} [props.type='filled'] - Type of the button.
- * @param {'square' | 'rounded' | 'capsule'} [props.edge='rounded'] - Button edge style.
+ * @param {'square' | 'rounded' | 'capsule' | 'circular'} [props.edge='rounded'] - Button edge style.
  * @param {string|null} [props.brandColor=null] - Custom brand color used when variant is 'brand'.
  * @param {() => void|null} [props.onPress=null] - Function to call when the button is pressed.
  * @param {React.ReactNode|null} [props.icon=null] - Optional icon to render inside the button.
@@ -28,7 +28,7 @@ import {edges, sizes, variants} from '../lib/common';
 const Button = ({
   size = 'medium',
   variant = 'default',
-  text = 'Button',
+  text = 'Button text',
   brandColor = null,
   onPress = null,
   icon = null,
@@ -94,7 +94,9 @@ const Button = ({
         <>
           <ActivityIndicator
             size="small"
-            color={type === 'outline' ? variants[variant].bg : '#fff'}
+            color={
+              ['outline', 'icon'].includes(type) ? variants[variant].bg : '#fff'
+            }
           />
           {text && (
             <Text style={[styles.loadingText, dynamicTextStyles]}>{text}</Text>

@@ -107,6 +107,7 @@ const Dropdown = ({
             style={styles.searchInput}
             placeholder="Search options"
             placeholderTextColor="#aaa"
+            selectionColor="#000"
             value={searchText}
             autoFocus={open}
             onChangeText={setSearchText}
@@ -192,6 +193,7 @@ const styles = StyleSheet.create({
     borderRightWidth: 2,
   },
   searchInput: {
+    color: '#000',
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',

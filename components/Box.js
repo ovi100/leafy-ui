@@ -4,7 +4,6 @@ import colors from '../lib/tailwind/colors';
 import { elevations } from '../lib/common';
 
 const Box = ({ style, elevation, children }) => {
-  // console.log(style.backgroundColor)
   const boxStyle = [
     styles.box,
     style,

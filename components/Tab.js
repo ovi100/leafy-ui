@@ -1,105 +1,58 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   Dimensions,
   View,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
 } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  runOnJS,
 } from 'react-native-reanimated';
-import {
-  GestureDetector,
-  Gesture,
-} from 'react-native-gesture-handler';
-import { colors, lighten } from '../lib/common';
+import {colors, edges, lighten} from '../lib/common';
 
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
+
+/**
+ * A customizable tab component with animated transitions between tabs.
+ *
+ * @component
+ * @param {Object} props - Component props
+ * @param {Array.<{label: string, content: React.ReactNode}>} [props.tabs=null] - Array of tab objects containing label and content
+ * @param {'classic'|'rounded'|'square'|'capsule'} [props.theme='classic'] - Visual style of the tab header
+ * @param {'small'|'medium'|'large'} [props.size='medium'] - Size variant of the tabs
+ * @param {'default' | 'brand' | 'primary' | 'secondary' | 'danger' | 'success'} [props.variant='default'] - Color variant of the active tab indicator
+ * @param {Boolean} [props.trackVisibility=false] - Visibility of tab track
+ * @returns {React.ReactElement} The tab component
+ *
+ * @example
+ * <Tab
+ *   tabs={[
+ *     { label: 'Tab 1', content: <View><Text>Content 1</Text></View> },
+ *     { label: 'Tab 2', content: <View><Text>Content 2</Text></View> }
+ *   ]}
+ *   theme="rounded"
+ *   size="large"
+ *   variant="primary"
+ * />
+ */
 
 const Tab = ({
   tabs = null,
   theme = 'classic',
   size = 'medium',
   variant = 'default',
+  trackVisibility = true,
 }) => {
   const [activeTab, setActiveTab] = useState(0);
   const translateX = useSharedValue(0);
 
   const sizes = {
-    small: { space: 6, fontSize: 14, iconSize: 14 },
-    medium: { space: 8, fontSize: 16, iconSize: 16 },
-    large: { space: 10, fontSize: 18, iconSize: 18 },
-  };
-
-  const baseStyles = {
-    text: '#6b7280',
-    iconColor: '#000',
-  };
-
-  const activeButtonStyles = color => ({
-    borderBottomWidth: 2,
-    borderColor: color,
-  });
-
-  const activeTextStyles = color => ({
-    color,
-    fontWeight: 'semibold',
-  });
-
-  const activeBackgroundStyles = (color, borderRadius) => ({
-    backgroundColor: color,
-    borderRadius,
-    color: '#FFF',
-    fontWeight: 'medium',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  });
-
-  const getTrackStyles = theme => {
-    let styles = {
-      backgroundColor: '#fff',
-      borderColor: '#fff',
-      borderRadius: 0,
-    };
-    const hexColor = lighten(colors[variant], 40);
-
-    if (theme !== 'classic') {
-      styles.backgroundColor = hexColor;
-      styles.borderColor = hexColor;
-      styles.borderRadius = theme === 'rounded' ? 100 : 8;
-    }
-
-    return styles;
-  };
-
-  const getActiveStyles = theme => {
-    let styles = {};
-
-    if (theme === 'classic') {
-      styles.button = activeButtonStyles(colors[variant]);
-      styles.text = activeTextStyles(colors[variant]);
-    } else {
-      const radius = theme === 'square' ? 6 : 100;
-      styles.button = {};
-      styles.text = activeBackgroundStyles(colors[variant], radius);
-    }
-
-    return styles;
-  };
-
-  const variants = {
-    ...Object.fromEntries(
-      Object.entries(colors).map(([key]) => [
-        key,
-        {
-          ...baseStyles,
-          active: getActiveStyles(theme),
-        },
-      ]),
-    ),
+    small: {space: 12, fontSize: 12, iconSize: 12},
+    medium: {space: 16, fontSize: 16, iconSize: 16},
+    large: {space: 20, fontSize: 20, iconSize: 20},
   };
 
   const handleTabPress = index => {
@@ -110,102 +63,109 @@ const Tab = ({
     });
   };
 
-  const panGesture = Gesture.Pan()
-    .onUpdate(event => {
-      translateX.value = -width * activeTab + event.translationX;
-    })
-    .onEnd(event => {
-      if (event.translationX > 50 && activeTab > 0) {
-        runOnJS(handleTabPress)(activeTab - 1);
-      } else if (event.translationX < -50 && activeTab < tabs.length - 1) {
-        runOnJS(handleTabPress)(activeTab + 1);
-      } else {
-        translateX.value = withSpring(-width * activeTab, {
-          damping: 50,
-          stiffness: 200,
-        });
-      }
-    });
-
-  const contentStyle = { width: width * tabs.length, flexDirection: 'row' };
+  const contentStyle = {width: width * tabs.length, flexDirection: 'row'};
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateX: translateX.value }],
+      transform: [{translateX: translateX.value}],
     };
   });
 
-  const tabButtonStyle = index => {
-    let styles = {
-      alignItems: 'center',
-      width: `${100 / tabs.length}%`,
-    };
-    if (theme === 'classic') {
-      styles = {
-        ...styles,
-        paddingBottom: 5,
-      };
-    }
-    if (activeTab === index) {
-      styles = {
-        ...styles,
-        ...variants[variant].active.button,
-      };
-    }
-    return styles;
-  };
-
-  const tabButtonTextStyle = index => {
-    if (activeTab === index) {
-      return {
-        fontSize: sizes[size].fontSize,
-        ...variants[variant].active.text,
-      };
-    } else {
-      return {
-        fontSize: sizes[size].fontSize,
-        color: variants[variant].text,
-      };
-    }
+  const variants = {
+    ...Object.fromEntries(
+      Object.entries(colors).map(([key]) => [
+        key,
+        {
+          iconColor: '#000',
+          common: {
+            borderTopWidth: theme !== 'classic' ? 1 : 0,
+            borderRightWidth: theme !== 'classic' ? 1 : 0,
+            borderBottomWidth: theme !== 'classic' ? 1 : 2,
+            borderLeftWidth: theme !== 'classic' ? 1 : 0,
+            borderRadius: theme !== 'classic' ? edges[theme] : 0,
+            paddingHorizontal: sizes[size].space,
+            paddingVertical: sizes[size].space / 3,
+            marginRight: 10,
+          },
+          track: trackVisibility
+            ? {
+                backgroundColor:
+                  theme !== 'classic'
+                    ? lighten(colors[variant], 40)
+                    : 'transparent',
+                borderWidth: 1,
+                borderColor:
+                  theme !== 'classic'
+                    ? lighten(colors[variant], 40)
+                    : 'transparent',
+                borderRadius: theme !== 'classic' ? edges[theme] : 0,
+                padding: sizes[size].space,
+              }
+            : {},
+          button: {
+            backgroundColor: 'transparent',
+            borderColor: '#6b7280',
+          },
+          text: {
+            color: '#6b7280',
+            fontWeight: 'normal',
+          },
+          active: {
+            button: {
+              backgroundColor:
+                theme !== 'classic' ? colors[variant] : 'transparent',
+              borderColor: colors[variant],
+            },
+            text: {
+              color: theme !== 'classic' ? '#fff' : colors[variant],
+              fontWeight: 'bold',
+            },
+          },
+        },
+      ]),
+    ),
   };
 
   if (tabs === null) {
     return null;
   }
 
-
   return (
     <View style={styles.container}>
-      {/* Tab Headers */}
-      <View
-        style={[
-          styles.header,
-          getTrackStyles(theme),
-          { padding: sizes[size].space, fontSize: sizes[size].fontSize },
-        ]}>
-        {tabs.map((tab, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => handleTabPress(index)}
-            style={tabButtonStyle(index)}>
-            <Animated.Text
-              style={tabButtonTextStyle(index)}>
-              {tab.label}
-            </Animated.Text>
-          </TouchableOpacity>
-        ))}
+      {/* Tab Headers with horizontal scroll */}
+      <View style={[styles.header, variants[variant].track]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {tabs.map((tab, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => handleTabPress(index)}
+              style={[
+                variants[variant].common,
+                activeTab === index
+                  ? variants[variant].active.button
+                  : variants[variant].button,
+              ]}>
+              <Animated.Text
+                style={[
+                  activeTab === index
+                    ? variants[variant].active.text
+                    : variants[variant].text,
+                ]}>
+                {tab.label}
+              </Animated.Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       {/* Tab Content */}
-      <GestureDetector gesture={panGesture}>
-        <Animated.View style={[contentStyle, animatedStyle]}>
-          {tabs.map((tab, index) => (
-            <View key={index} style={{ width }}>
-              {tab.content}
-            </View>
-          ))}
-        </Animated.View>
-      </GestureDetector>
+      <Animated.View style={[contentStyle, animatedStyle]}>
+        {tabs.map((tab, index) => (
+          <View key={index} style={{width}}>
+            {tab.content}
+          </View>
+        ))}
+      </Animated.View>
     </View>
   );
 };
@@ -217,10 +177,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
+    marginBottom: 8,
   },
   contentContainer: {
     position: 'absolute',

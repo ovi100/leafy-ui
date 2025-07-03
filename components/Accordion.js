@@ -9,7 +9,7 @@ import Animated, {
   useDerivedValue,
   withTiming,
 } from 'react-native-reanimated';
-import {lighten, sizes, variants} from '../lib/common';
+import {edges, lighten, sizes, variants} from '../lib/common';
 
 const accordionStyle = {color: '#fff', fontSize: 14};
 const content = (
@@ -26,14 +26,34 @@ const content = (
   </View>
 );
 
+/**
+ * A customizable Accordion component with support for size, variant, edge, type, divider and disabled states.
+ *
+ * @param {Object} props - Accordion component props.
+ * @param {{title:string, icon:React.ReactNode, content:React.ReactNode}} [props.item] - Accordion component item.
+ * @param {'small' | 'medium' | 'large'} [props.size='medium'] - Size of the Accordion.
+ * @param {'default' | 'brand' | 'primary' | 'secondary' | 'danger' | 'success' | 'warn'} [props.variant='default'] - Variant/style type of the Accordion.
+ * @param {string} [props.text='Button text'] - Text to display inside the Accordion.
+ * @param {'filled' | 'outline' | 'text' | 'icon'} [props.type='filled'] - Type of the Accordion.
+ * @param {'square' | 'rounded' | 'capsule'} [props.edge='rounded'] - Button edge style.
+ * @param {string|null} [props.brandColor=null] - Custom brand color used when variant is 'brand'.
+ * @param {boolean} [props.divider=false] - A top and bottom divider for the Accordion.
+ *
+ * @returns {JSX.Element} A styled Accordion component.
+ */
+
 const Accordion = ({
   item = {
     title: 'Accordion 1',
+    icon: null,
     content,
   },
   size = 'medium',
   variant = 'default',
   brandColor = '',
+  edge = 'rounded',
+  type = 'filled',
+  divider = false,
 }) => {
   const listRef = useAnimatedRef();
   const heightValue = useSharedValue(0);
@@ -54,9 +74,46 @@ const Accordion = ({
     transform: [{rotate: `${rotate.value * 45}deg`}],
   }));
 
-  const getContentStyle = () => {
+  const getContainerStyle = () => {
+    let borderWidth, borderTopWidth, marginVertical;
+    const backgroundColor =
+      type === 'filled'
+        ? variant === 'brand' && brandColor
+          ? brandColor
+          : variants[variant].bg
+        : 'transparent';
+    const borderColor =
+      variant === 'brand' && brandColor ? brandColor : variants[variant].bg;
+    const borderRadius = edges[edge];
+    if (type === 'text' && divider) {
+      borderTopWidth = 1;
+      marginVertical = 0;
+    } else {
+      borderWidth = 1;
+      marginVertical = 5;
+    }
     return {
-      backgroundColor: lighten(variants[variant].bg, 15),
+      backgroundColor,
+      borderColor,
+      borderRadius,
+      borderWidth,
+      borderTopWidth,
+      marginVertical,
+    };
+  };
+
+  const getTitleStyle = () => {
+    return {
+      color: variants[variant].text,
+      fontSize: sizes[size].fontSize,
+    };
+  };
+
+  const getContentStyle = () => {
+    const backgroundColor =
+      variant === 'default' ? '#f3f4f6' : lighten(variants[variant].bg, 15);
+    return {
+      backgroundColor,
       padding: sizes[size].space,
       paddingHorizontal: sizes[size].space,
       paddingTop: sizes[size].space / 2,
@@ -89,24 +146,14 @@ const Accordion = ({
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: variants[variant].bg,
-          borderColor: variants[variant].bg,
-        },
-      ]}>
+    <View style={[styles.container, getContainerStyle()]}>
       <Pressable
         onPress={() => toggleContent()}
         style={[styles.titleContainer, {padding: sizes[size].space}]}>
-        <Text
-          style={{
-            color: variants[variant].text,
-            fontSize: sizes[size].fontSize,
-          }}>
-          {item.title}
-        </Text>
+        <View style={styles.title}>
+          {item?.icon && <View>{item.icon}</View>}
+          <Text style={getTitleStyle()}>{item.title}</Text>
+        </View>
         <Animated.View style={[iconStyle, getIconStyle(), styles.icon]} />
       </Pressable>
       <Animated.View style={heightAnimationStyle}>
@@ -122,15 +169,15 @@ export default Accordion;
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 5,
-    borderRadius: 6,
-    borderWidth: 1,
     overflow: 'hidden',
   },
   titleContainer: {
-    padding: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  title: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   icon: {

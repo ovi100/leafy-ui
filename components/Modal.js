@@ -4,12 +4,13 @@ import {
   Modal as RNModal,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import ButtonClose from './ButtonClose';
-const { width } = Dimensions.get('window');
+const {height, width} = Dimensions.get('window');
 
-const demoContent = { color: 'black', padding: 16, textAlign: 'center' };
+const demoContent = {color: 'black', padding: 16, textAlign: 'center'};
 
 const Modal = ({
   isOpen = false,
@@ -23,38 +24,47 @@ const Modal = ({
     </Text>
   ),
 }) => {
-  const getDynamicWidth = (w) => {
+  const getDynamicWidth = () => {
     return {
-      width: w > 480 ? '95%' : '100%',
+      width: width > 480 ? '95%' : '100%',
+    };
+  };
+
+  const getDynamicHeaderText = () => {
+    return {
+      marginLeft: closeIcon ? 15 : 0,
     };
   };
 
   const getContentStyles = () => {
     return {
-      marginTop: header ? 12 : 0,
+      marginTop: header ? 10 : 0,
     };
   };
 
   return (
-    <RNModal
-      visible={isOpen}
-      animationType="fade"
-      statusBarTranslucent
-      transparent>
+    <RNModal visible={isOpen} animationType="fade" transparent>
       <View style={styles.container}>
-        <View
-          style={[styles.modal, getDynamicWidth(width)]}>
+        <View style={[styles.modal, getDynamicWidth()]}>
           {header && (
             <View style={styles.modalHeader}>
-              <Text style={styles.headerText}>{header}</Text>
+              <Text style={[styles.headerText, getDynamicHeaderText()]}>
+                {header}
+              </Text>
               {showCloseButton && (
-                <ButtonClose onPress={onPress} />
+                <>
+                  {closeIcon ? (
+                    <TouchableOpacity onPress={onPress}>
+                      {closeIcon}
+                    </TouchableOpacity>
+                  ) : (
+                    <ButtonClose onPress={onPress} />
+                  )}
+                </>
               )}
             </View>
           )}
-          <View style={getContentStyles()}>
-            {children}
-          </View>
+          <View style={getContentStyles()}>{children}</View>
         </View>
       </View>
     </RNModal>
@@ -66,20 +76,21 @@ export default Modal;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgba(39, 39, 42, 0.4)',
-    alignItems: 'center',
+    backgroundColor: '#00000099',
     justifyContent: 'center',
-    paddingHorizontal: 12,
+    padding: width > 480 ? 15 : 10,
   },
   modal: {
     backgroundColor: 'white',
     borderRadius: 6,
-    padding: 20,
-    height: 'auto',
+    paddingHorizontal: 10,
+    paddingVertical: 15,
+    maxHeight: height > 570 ? height * 0.95 : height,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   headerText: {
     flex: 1,

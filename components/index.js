@@ -15,6 +15,7 @@ import Modal from './Modal';
 import OtpInput from './OptInput';
 import Picker from './Picker';
 import ProgressBar from './ProgressBar';
+import Radio from './Radio';
 import Switch from './Switch';
 import Tab from './Tab';
 import Table from './Table';
@@ -37,6 +38,7 @@ export {
   OtpInput,
   Picker,
   ProgressBar,
+  Radio,
   Switch,
   Tab,
   Table,

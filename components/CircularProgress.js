@@ -5,9 +5,32 @@ import Animated, {
   useAnimatedProps,
   withTiming,
   Easing,
+  interpolate,
 } from 'react-native-reanimated';
 import {Svg, Circle} from 'react-native-svg';
+
 const {width} = Dimensions.get('window');
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+/**
+ * @typedef {'small' | 'medium' | 'large'} Size
+ * @typedef {'default' | 'brand' | 'primary' | 'secondary' | 'danger' | 'success' | 'warn'} Variant
+ */
+
+/**
+ * CircularProgress renders an animated circular progress indicator with percentage text.
+ *
+ * @component
+ *
+ * @param {Object} props
+ * @param {Size} [props.size='medium'] - The size of the progress indicator.
+ * @param {Variant} [props.variant='default'] - The color variant of the progress and text.
+ * @param {number} [props.progress=75] - The progress value (0 to 100).
+ * @param {number} [props.duration=1000] - The animation duration in milliseconds.
+ *
+ * @returns {JSX.Element}
+ */
 
 const CircularProgress = ({
   size = 'medium',
@@ -15,8 +38,6 @@ const CircularProgress = ({
   progress = 75,
   duration = 1000,
 }) => {
-  const progressValue = useSharedValue(0);
-
   const sizes = {
     small: {width: 0.15, fontSize: 12, strokeWidth: 6},
     medium: {width: 0.2, fontSize: 14, strokeWidth: 8},
@@ -31,35 +52,37 @@ const CircularProgress = ({
     danger: {track: '#e5e7eb', fill: '#ef4444', text: '#ef4444'},
     success: {track: '#e5e7eb', fill: '#22c55e', text: '#22c55e'},
     warn: {track: '#e5e7eb', fill: '#ff8904', text: '#ff8904'},
-    // custom: custom,
   };
+
   const SIZE = width * sizes[size].width;
   const strokeWidth = sizes[size].strokeWidth;
   const radius = (SIZE - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+  const progressValue = useSharedValue(0);
 
-  // Animate the progress value
   useEffect(() => {
     progressValue.value = withTiming(progress, {
-      duration: duration,
-      easing: Easing.linear,
+      duration,
+      easing: Easing.out(Easing.ease),
     });
   }, [duration, progress, progressValue]);
 
-  const animatedProps = useAnimatedProps(() => {
-    const strokeDashoffset =
-      circumference - (progressValue.value / 100) * circumference;
+  const animatedCircleProps = useAnimatedProps(() => {
+    const strokeDashoffset = interpolate(
+      progressValue.value,
+      [0, 100],
+      [circumference, 0],
+    );
     return {
       strokeDashoffset,
     };
   });
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {width: SIZE, height: SIZE}]}>
       <Svg width={SIZE} height={SIZE} style={styles.svg}>
-        {/* Background Circle */}
+        {/* Track */}
         <Circle
           cx={SIZE / 2}
           cy={SIZE / 2}
@@ -68,7 +91,7 @@ const CircularProgress = ({
           strokeWidth={strokeWidth}
           fill="transparent"
         />
-        {/* Progress Circle */}
+        {/* Progress */}
         <AnimatedCircle
           cx={SIZE / 2}
           cy={SIZE / 2}
@@ -76,11 +99,12 @@ const CircularProgress = ({
           stroke={variants[variant].fill}
           strokeWidth={strokeWidth}
           fill="transparent"
-          strokeDasharray={circumference}
-          animatedProps={animatedProps}
+          strokeDasharray={`${circumference}, ${circumference}`}
+          animatedProps={animatedCircleProps}
           strokeLinecap="round"
         />
       </Svg>
+      {/* Progress Text */}
       <Animated.View style={styles.progress}>
         <Text
           style={[
@@ -103,14 +127,10 @@ const styles = StyleSheet.create({
   },
   svg: {
     transform: [{rotate: '-90deg'}],
-  },
-  progress: {
     position: 'absolute',
   },
   progressText: {
-    fontWeight: 'semibold',
-  },
-  label: {
-    color: '#000000',
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
